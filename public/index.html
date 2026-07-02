@@ -324,12 +324,17 @@
 
         // Helper to resolve API URLs
         function getApiUrl(endpoint) {
-            const base = API_BASE_URL || window.location.origin;
-            // If window.location.origin is on local port 3000 (Vercel/Next), fallback to port 8080 backend
-            if (!API_BASE_URL && (window.location.port === '3000' || window.location.port === '5000' || window.location.hostname.includes('vercel.app'))) {
+            if (API_BASE_URL) {
+                return `${API_BASE_URL}${endpoint}`;
+            }
+            // If running frontend locally, default to local port 8080 backend
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
                 return `http://localhost:8080${endpoint}`;
             }
-            return `${base}${endpoint}`;
+            // In production on Vercel, default to your deployed Railway backend URL.
+            // Replace this with your actual Railway app URL once deployed!
+            const PRODUCTION_BACKEND_URL = 'https://zomato-recommendation-api.up.railway.app'; 
+            return `${PRODUCTION_BACKEND_URL}${endpoint}`;
         }
 
         // Display errors
