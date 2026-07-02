@@ -1,0 +1,17 @@
+# Ignore all backend Python files and directories during Vercel deployment
+src/
+tests/
+.venv/
+.pytest_cache/
+.cache/
+.git/
+.env
+.env.example
+Dockerfile
+requirements.txt
+Procfile
+smoke_test_phase4.py
+stitch_ai_restaurant_recommendation_engine/
+implementation-plan.md
+README.md
+docs/

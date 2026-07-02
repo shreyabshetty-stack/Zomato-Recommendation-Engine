@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Zomato AI Recommendations</title>
+    <!-- Tailwind CSS with forms plugin -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#E23744',
+                        'primary-hover': '#c92c38',
+                        'bg-main': '#121414',
+                        'card-bg': '#181B20',
+                        'border-color': '#2A2F38',
+                        'text-main': '#e3e2e2',
+                        'text-muted': '#e4bebc',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #121414;
+            color: #e3e2e2;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2A2F38;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #E23744;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            border-color: rgba(226, 55, 68, 0.4);
+            box-shadow: 0 12px 24px -10px rgba(0,0,0,0.5);
+        }
+        .skeleton-shimmer {
+            background: linear-gradient(90deg, #1f232b 25%, #2a303c 50%, #1f232b 75%);
+            background-size: 200% 100%;
+            animation: loading-shimmer 1.5s infinite;
+        }
+        @keyframes loading-shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- Header / Navbar -->
+    <header class="w-full border-b border-border-color bg-bg-main sticky top-0 z-50">
+        <div class="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="height: 40px; width: 40px;">
+                    <defs>
+                        <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#FF5252" />
+                            <stop offset="100%" stop-color="#E23744" />
+                        </linearGradient>
+                    </defs>
+                    <rect x="10" y="10" width="80" height="80" rx="20" fill="url(#logo-grad)" />
+                    <path d="M38 35 v18 M34 35 v10 M42 35 v10 M38 53 v15" stroke="white" stroke-width="4" stroke-linecap="round"/>
+                    <path d="M62 35 c-5 0-8 4-8 10 c0 6 3 10 8 10 s8-4 8-10 c0-6-3-10-8-10 z M62 55 v13" fill="white" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+                    <path d="M72 20 l2 4 l4 2 l-4 2 l-2 4 l-2-4 l-4-2 l4-2 z" fill="#facc15" />
+                </svg>
+                <span class="text-xl font-bold tracking-tight">Zomato AI Recommendations</span>
+            </div>
+            
+            <!-- API Connection Settings -->
+            <div class="flex items-center gap-3">
+                <div class="relative group">
+                    <button id="settings-btn" class="p-2 text-text-muted hover:text-text-main hover:bg-card-bg rounded-lg transition-colors flex items-center gap-1 text-sm border border-transparent hover:border-border-color">
+                        <span class="material-symbols-outlined" style="font-size: 20px;">settings</span>
+                        <span>API Server</span>
+                    </button>
+                    <div id="settings-dropdown" class="absolute right-0 mt-2 w-72 bg-card-bg border border-border-color rounded-xl p-4 shadow-2xl hidden z-50">
+                        <h4 class="text-sm font-semibold mb-2 text-text-main">Backend API URL</h4>
+                        <input id="api-url-input" type="text" class="w-full text-xs bg-bg-main border border-border-color rounded-lg text-text-main p-2 focus:ring-1 focus:ring-primary focus:border-primary outline-none" value="" placeholder="http://localhost:8080"/>
+                        <p class="text-[10px] text-text-muted mt-2">Provide the Railway API endpoint. Leave empty to use local development server.</p>
+                        <button id="save-settings-btn" class="w-full mt-3 bg-primary hover:bg-primary-hover text-white text-xs py-2 rounded-lg font-semibold transition-colors">Save Address</button>
+                    </div>
+                </div>
+                <a href="#" class="text-xs text-text-muted hover:text-text-main border-b border-text-muted hover:border-text-main pb-0.5 font-medium transition-all">Find your perfect restaurant</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="flex-grow max-w-[1200px] w-full mx-auto px-6 py-8">
+        <!-- Error alert bar -->
+        <div id="error-bar" class="hidden mb-6 bg-red-900/30 border border-red-500/40 rounded-xl p-4 flex gap-3 items-center">
+            <span class="material-symbols-outlined text-red-400">report</span>
+            <span id="error-message" class="text-sm text-red-200"></span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-10 gap-8 items-start">
+            
+            <!-- LEFT COLUMN: Preferences Form -->
+            <section class="md:col-span-4 bg-card-bg border border-border-color rounded-2xl p-6">
+                <form id="preferences-form" onsubmit="event.preventDefault(); fetchRecommendations();">
+                    <div class="flex items-center gap-2 mb-6">
+                        <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1; font-size: 28px;">tune</span>
+                        <h3 class="text-lg font-bold text-text-main">Your Preferences</h3>
+                    </div>
+
+                    <!-- Location Dropdown -->
+                    <div class="mb-4">
+                        <label for="location-select" class="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Location</label>
+                        <select id="location-select" required class="w-full bg-bg-main border border-border-color rounded-xl text-text-main p-3 focus:ring-1 focus:ring-primary focus:border-primary outline-none">
+                            <option value="">Select a Location...</option>
+                        </select>
+                    </div>
+
+                    <!-- Budget & Cuisine Row -->
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label for="budget-select" class="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Budget</label>
+                            <select id="budget-select" required class="w-full bg-bg-main border border-border-color rounded-xl text-text-main p-3 focus:ring-1 focus:ring-primary focus:border-primary outline-none">
+                                <option value="Low">Low &lt;₹500</option>
+                                <option value="Medium" selected>Medium ₹501-1500</option>
+                                <option value="High">High &gt;₹1500</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="cuisine-select" class="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Cuisine</label>
+                            <select id="cuisine-select" class="w-full bg-bg-main border border-border-color rounded-xl text-text-main p-3 focus:ring-1 focus:ring-primary focus:border-primary outline-none">
+                                <option value="All Cuisines">All Cuisines</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Rating Slider -->
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-semibold text-text-muted uppercase tracking-wider">Min. Rating</span>
+                            <span id="rating-val" class="text-sm font-bold text-primary">4.2+ ★</span>
+                        </div>
+                        <input id="rating-slider" type="range" min="0" max="5.0" step="0.1" value="4.2" class="w-full h-1 bg-border-color rounded-lg appearance-none cursor-pointer accent-primary"/>
+                    </div>
+
+                    <!-- Cravings text area -->
+                    <div class="mb-6">
+                        <label for="cravings-input" class="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Describe your cravings</label>
+                        <textarea id="cravings-input" rows="3" class="w-full bg-bg-main border border-border-color rounded-xl text-text-main p-3 focus:ring-1 focus:ring-primary focus:border-primary outline-none placeholder:text-zinc-600 text-sm" placeholder="I'm looking for a quiet place with great sourdough pizza and candlelight..."></textarea>
+                    </div>
+
+                    <!-- CTA Button -->
+                    <button type="submit" class="w-full py-3.5 bg-primary hover:bg-primary-hover text-white font-bold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2">
+                        <span>✨</span>
+                        <span>Get Recommendations</span>
+                    </button>
+                </form>
+            </section>
+
+            <!-- RIGHT COLUMN: Recommendations Results Area -->
+            <section class="md:col-span-6 flex flex-col">
+                <div class="text-lg font-bold mb-6 text-text-main flex items-center gap-2">
+                    <span class="material-symbols-outlined text-text-muted">restaurant</span>
+                    <span>Recommendations</span>
+                </div>
+
+                <!-- Chips & Warning Row -->
+                <div id="chips-container" class="flex flex-wrap gap-2 mb-4 hidden"></div>
+                <div id="relaxed-warning" class="hidden mb-4 bg-amber-900/20 border border-amber-500/30 rounded-xl p-4 flex gap-3 items-center">
+                    <span class="material-symbols-outlined text-amber-400">info</span>
+                    <span id="relaxed-warning-text" class="text-sm text-amber-200"></span>
+                </div>
+
+                <!-- Cards Container (Internal Scroll Container) -->
+                <div id="cards-scroll-container" class="max-h-[600px] overflow-y-auto pr-1 flex flex-col gap-4">
+                    
+                    <!-- Empty Initial State -->
+                    <div id="empty-state" class="flex flex-col items-center justify-center py-20 text-center bg-card-bg border border-border-color rounded-2xl p-6">
+                        <div class="text-4xl mb-4">🔍</div>
+                        <h4 class="text-md font-bold mb-2">Your top picks will appear here</h4>
+                        <p class="text-sm text-text-muted max-w-sm">Set your location and preferences on the left, then click Get Recommendations to discover great restaurants.</p>
+                    </div>
+
+                    <!-- Skeleton Loader (Hidden by default) -->
+                    <div id="skeleton-loader" class="hidden flex flex-col gap-4">
+                        <div class="bg-card-bg/40 border border-dashed border-border-color p-5 rounded-2xl flex gap-4 items-center">
+                            <div class="w-12 h-12 flex-shrink-0 skeleton-shimmer rounded-xl"></div>
+                            <div class="flex-grow space-y-2">
+                                <div class="h-6 w-1/3 skeleton-shimmer rounded"></div>
+                                <div class="h-4 w-2/3 skeleton-shimmer rounded"></div>
+                            </div>
+                            <div class="text-primary text-xs font-bold animate-pulse">AI is ranking restaurants for you...</div>
+                        </div>
+                        <div class="bg-card-bg/20 border border-dashed border-border-color/50 p-5 rounded-2xl flex gap-4 items-center opacity-60">
+                            <div class="w-12 h-12 flex-shrink-0 skeleton-shimmer rounded-xl"></div>
+                            <div class="flex-grow space-y-2">
+                                <div class="h-6.w-1/4 skeleton-shimmer rounded"></div>
+                                <div class="h-4 w-1/2 skeleton-shimmer rounded"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Card List Anchor -->
+                    <div id="dynamic-cards-list" class="flex flex-col gap-4"></div>
+
+                </div>
+
+                <div id="powered-by-label" class="hidden mt-4 text-xs text-text-muted text-right opacity-60">
+                    Powered by Groq LLM
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full flex flex-col items-center justify-center py-8 border-t border-border-color/30 mt-12 bg-bg-main">
+        <div class="max-w-[1200px] w-full px-6 flex flex-col items-center gap-4">
+            <div class="flex items-center gap-2 opacity-60">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="height: 24px; width: 24px; filter: grayscale(100%) contrast(1.2);">
+                    <defs>
+                        <linearGradient id="footer-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#FF5252" />
+                            <stop offset="100%" stop-color="#E23744" />
+                        </linearGradient>
+                    </defs>
+                    <rect x="10" y="10" width="80" height="80" rx="20" fill="url(#footer-logo-grad)" />
+                    <path d="M38 35 v18 M34 35 v10 M42 35 v10 M38 53 v15" stroke="white" stroke-width="4" stroke-linecap="round"/>
+                    <path d="M62 35 c-5 0-8 4-8 10 c0 6 3 10 8 10 s8-4 8-10 c0-6-3-10-8-10 z M62 55 v13" fill="white" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+                    <path d="M72 20 l2 4 l4 2 l-4 2 l-2 4 l-2-4 l-4-2 l4-2 z" fill="#facc15" />
+                </svg>
+                <span class="text-xs font-semibold text-text-muted">Zomato AI Recommendations</span>
+            </div>
+            <p class="text-xs text-text-muted text-center opacity-60">
+                © 2026 Zomato AI Recommendations. Powered by advanced semantic search and culinary neural networks.
+            </p>
+            <div class="flex gap-6">
+                <a class="text-text-muted hover:text-text-main transition-colors text-xs" href="#">Privacy</a>
+                <a class="text-text-muted hover:text-text-main transition-colors text-xs" href="#">Terms</a>
+                <a class="text-text-muted hover:text-text-main transition-colors text-xs" href="#">API Access</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // DOM Elements
+        const slider = document.getElementById('rating-slider');
+        const ratingValLabel = document.getElementById('rating-val');
+        const locationSelect = document.getElementById('location-select');
+        const cuisineSelect = document.getElementById('cuisine-select');
+        const preferencesForm = document.getElementById('preferences-form');
+        
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsDropdown = document.getElementById('settings-dropdown');
+        const apiUrlInput = document.getElementById('api-url-input');
+        const saveSettingsBtn = document.getElementById('save-settings-btn');
+
+        const errorBar = document.getElementById('error-bar');
+        const errorMessage = document.getElementById('error-message');
+
+        const emptyState = document.getElementById('empty-state');
+        const skeletonLoader = document.getElementById('skeleton-loader');
+        const dynamicCardsList = document.getElementById('dynamic-cards-list');
+        
+        const chipsContainer = document.getElementById('chips-container');
+        const relaxedWarning = document.getElementById('relaxed-warning');
+        const relaxedWarningText = document.getElementById('relaxed-warning-text');
+        const poweredByLabel = document.getElementById('powered-by-label');
+
+        // State variables
+        let API_BASE_URL = localStorage.getItem('ZOMATO_API_URL') || '';
+
+        // Initialize Settings Input
+        apiUrlInput.value = API_BASE_URL;
+
+        // Toggle connection dropdown
+        settingsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            settingsDropdown.classList.toggle('hidden');
+        });
+        
+        document.addEventListener('click', () => {
+            settingsDropdown.classList.add('hidden');
+        });
+
+        settingsDropdown.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        // Save server settings
+        saveSettingsBtn.addEventListener('click', () => {
+            const val = apiUrlInput.value.trim();
+            API_BASE_URL = val.replace(/\/$/, ""); // strip trailing slash
+            localStorage.setItem('ZOMATO_API_URL', API_BASE_URL);
+            settingsDropdown.classList.add('hidden');
+            // Reload page options based on new backend URL
+            loadFilters();
+        });
+
+        // Sync rating slider labels
+        slider.addEventListener('input', (e) => {
+            ratingValLabel.textContent = `${parseFloat(e.target.value).toFixed(1)}+ ★`;
+        });
+
+        // Helper to resolve API URLs
+        function getApiUrl(endpoint) {
+            const base = API_BASE_URL || window.location.origin;
+            // If window.location.origin is on local port 3000 (Vercel/Next), fallback to port 8080 backend
+            if (!API_BASE_URL && (window.location.port === '3000' || window.location.port === '5000' || window.location.hostname.includes('vercel.app'))) {
+                return `http://localhost:8080${endpoint}`;
+            }
+            return `${base}${endpoint}`;
+        }
+
+        // Display errors
+        function showError(msg) {
+            errorMessage.textContent = Array.isArray(msg) ? msg.join(', ') : msg;
+            errorBar.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function clearError() {
+            errorBar.classList.add('hidden');
+            errorMessage.textContent = '';
+        }
+
+        // Fetch Dropdown options on load
+        async function loadFilters() {
+            try {
+                clearError();
+                // 1. Fetch locations
+                const locRes = await fetch(getApiUrl('/locations'));
+                if (!locRes.ok) throw new Error("Could not connect to the API server.");
+                const locations = await locRes.json();
+                
+                // Clear and repopulate locations select
+                locationSelect.innerHTML = '<option value="">Select a Location...</option>';
+                locations.forEach(loc => {
+                    const opt = document.createElement('option');
+                    opt.value = loc;
+                    opt.textContent = loc;
+                    locationSelect.appendChild(opt);
+                });
+
+                // 2. Fetch cuisines
+                const cuisRes = await fetch(getApiUrl('/cuisines'));
+                if (!cuisRes.ok) throw new Error("Could not fetch cuisines from backend.");
+                const cuisines = await cuisRes.json();
+                
+                // Clear and repopulate cuisines select
+                cuisineSelect.innerHTML = '<option value="All Cuisines">All Cuisines</option>';
+                cuisines.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c;
+                    opt.textContent = c;
+                    cuisineSelect.appendChild(opt);
+                });
+
+            } catch (err) {
+                console.error(err);
+                showError(`Failed to load server filters: ${err.message}. Make sure your backend API server is running.`);
+            }
+        }
+
+        // Perform recommendation pipeline fetch
+        async function fetchRecommendations() {
+            clearError();
+            
+            const location = locationSelect.value;
+            const budget = document.getElementById('budget-select').value;
+            const cuisine = cuisineSelect.value;
+            const minRating = slider.value;
+            const cravings = document.getElementById('cravings-input').value.trim();
+
+            if (!location) {
+                showError("Location is required.");
+                return;
+            }
+
+            // UI loading transitions
+            emptyState.classList.add('hidden');
+            dynamicCardsList.innerHTML = '';
+            skeletonLoader.classList.remove('hidden');
+            chipsContainer.classList.add('hidden');
+            relaxedWarning.classList.add('hidden');
+            poweredByLabel.classList.add('hidden');
+
+            try {
+                const reqPayload = {
+                    location: location,
+                    budget: budget,
+                    cuisine: cuisine === 'All Cuisines' ? null : cuisine,
+                    min_rating: minRating > 0 ? parseFloat(minRating) : null,
+                    additional_preferences: cravings || null
+                };
+
+                const res = await fetch(getApiUrl('/recommend'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(reqPayload)
+                });
+
+                if (!res.ok) {
+                    const errData = await res.json();
+                    throw new Error(errData.detail || "Server error occurred.");
+                }
+
+                const data = await res.json();
+                renderCardsList(data, reqPayload);
+
+            } catch (err) {
+                console.error(err);
+                showError(err.message || "Failed to retrieve recommendations.");
+                emptyState.classList.remove('hidden');
+            } finally {
+                skeletonLoader.classList.add('hidden');
+            }
+        }
+
+        // Render card results to DOM
+        function renderCardsList(data, query) {
+            dynamicCardsList.innerHTML = '';
+
+            // 1. Render active search chips
+            chipsContainer.innerHTML = '';
+            
+            const locationChip = createChip(`📍 ${query.location}`);
+            const budgetLabel = query.budget === 'Low' ? '<₹500' : query.budget === 'Medium' ? '₹501-1500' : '>₹1500';
+            const budgetChip = createChip(`💰 ${query.budget} (${budgetLabel})`);
+            
+            chipsContainer.appendChild(locationChip);
+            chipsContainer.appendChild(budgetChip);
+
+            if (query.cuisine) {
+                chipsContainer.appendChild(createChip(`🍜 ${query.cuisine}`));
+            }
+            if (query.min_rating) {
+                chipsContainer.appendChild(createChip(`⭐ ${query.min_rating.toFixed(1)}+`));
+            }
+            chipsContainer.classList.remove('hidden');
+
+            // 2. Render relaxed filters warning
+            if (data.filters_relaxed && data.filters_relaxed.length > 0) {
+                const names = data.filters_relaxed.map(f => {
+                    return f === 'cuisine' ? 'Cuisine' : f === 'budget' ? 'Budget' : f === 'min_rating' ? 'Rating' : f;
+                });
+                const namesStr = names.join(' and ');
+                relaxedWarningText.innerHTML = `We've relaxed your <strong>'${namesStr}'</strong> filter${names.length > 1 ? 's' : ''} slightly to show more relevant matches.`;
+                relaxedWarning.classList.remove('hidden');
+            }
+
+            // 3. Render recommendations cards
+            if (!data.cards || data.cards.length === 0) {
+                dynamicCardsList.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-12 text-center bg-card-bg border border-border-color rounded-2xl p-6">
+                        <div class="text-2xl mb-2">😕</div>
+                        <h4 class="text-sm font-bold mb-1">No restaurants matched your filters</h4>
+                        <p class="text-xs text-text-muted">Try broadening your search criteria.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            data.cards.forEach(card => {
+                const cardEl = document.createElement('div');
+                cardEl.className = "bg-card-bg p-6 rounded-2xl border border-border-color card-hover transition-all duration-300 flex gap-6 items-start";
+                
+                // Rank color mappings
+                let badgeClass = "bg-zinc-800/20 border border-zinc-700/30 text-zinc-400";
+                let explBorder = "border-primary";
+                let explTitleColor = "text-primary";
+                
+                if (card.rank === 1) {
+                    badgeClass = "bg-yellow-500/10 border border-yellow-500/30 text-yellow-500";
+                    explBorder = "border-primary";
+                    explTitleColor = "text-primary";
+                } else if (card.rank === 2) {
+                    badgeClass = "bg-slate-400/10 border border-slate-400/30 text-slate-300";
+                    explBorder = "border-slate-400/40";
+                    explTitleColor = "text-slate-400";
+                } else if (card.rank === 3) {
+                    badgeClass = "bg-amber-700/10 border border-amber-700/30 text-amber-600";
+                    explBorder = "border-amber-700/40";
+                    explTitleColor = "text-amber-700";
+                }
+
+                // Cuisines pills HTML
+                const cuisinePills = card.cuisines.split(',').slice(0, 3).map(c => {
+                    const trimmed = c.trim();
+                    return trimmed ? `<span class="px-2.5 py-[2px] bg-bg-main border border-border-color rounded text-[10px] font-semibold text-text-main">${trimmed}</span>` : '';
+                }).join('');
+
+                // Online Order / Table Booking badges HTML
+                let onlineBadge = card.online_order.toLowerCase() === 'yes' ? `<span class="px-2 py-[2px] bg-blue-500/10 border border-blue-500/30 text-blue-500 rounded text-[10px] font-semibold">🛵 Online Order</span>` : '';
+                let tableBadge = card.book_table.toLowerCase() === 'yes' ? `<span class="px-2 py-[2px] bg-purple-500/10 border border-purple-500/30 text-purple-500 rounded text-[10px] font-semibold">🪑 Book Table</span>` : '';
+
+                cardEl.innerHTML = `
+                    <div class="w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-xl text-lg font-bold ${badgeClass}">
+                        #${card.rank}
+                    </div>
+                    <div class="flex-grow min-w-0">
+                        <div class="flex justify-between items-start mb-2 gap-4">
+                            <div class="min-w-0 flex-1">
+                                <h4 class="text-xl font-bold text-text-main truncate" title="${card.name}">${card.name}</h4>
+                                <div class="flex flex-wrap gap-1.5 mt-2">${cuisinePills}</div>
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                <div class="flex items-center justify-end text-yellow-400 gap-1 mb-1">
+                                    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1; font-size: 18px;">star</span>
+                                    <span class="font-bold text-lg leading-none">${card.rating.toFixed(1)}</span>
+                                </div>
+                                <span class="text-text-muted text-xs font-medium">₹${card.cost_for_two.toLocaleString()} for two</span>
+                            </div>
+                        </div>
+                        <p class="text-sm text-text-muted mt-4 bg-[#0d0e0f]/50 p-4 rounded-xl border-l-4 ${explBorder} leading-relaxed">
+                            <span class="font-bold italic ${explTitleColor} mr-1.5">AI Review:</span>${card.explanation}
+                        </p>
+                        <div class="flex flex-wrap gap-2 mt-3">${onlineBadge}${tableBadge}</div>
+                        ${card.votes ? `<div class="text-[10px] text-text-muted opacity-60 mt-3 flex items-center gap-1"><span class="material-symbols-outlined" style="font-size: 14px;">groups</span>${card.votes.toLocaleString()} votes</div>` : ''}
+                    </div>
+                `;
+
+                // Add hover interactions dynamically
+                cardEl.addEventListener('mouseenter', () => {
+                    cardEl.style.borderColor = 'rgba(226, 55, 68, 0.4)';
+                });
+                cardEl.addEventListener('mouseleave', () => {
+                    cardEl.style.borderColor = '#2A2F38';
+                });
+
+                dynamicCardsList.appendChild(cardEl);
+            });
+
+            poweredByLabel.textContent = `Powered by Groq LLM · ${data.total_candidates_shown} result(s)`;
+            poweredByLabel.classList.remove('hidden');
+        }
+
+        // Chip generator helper
+        function createChip(label) {
+            const chip = document.createElement('span');
+            chip.className = "px-3 py-1 bg-zinc-800/60 border border-border-color text-xs rounded-full text-text-main font-medium flex items-center gap-1.5";
+            chip.textContent = label;
+            return chip;
+        }
+
+        // Trigger load filters on startup
+        loadFilters();
+    </script>
+</body>
+</html>
