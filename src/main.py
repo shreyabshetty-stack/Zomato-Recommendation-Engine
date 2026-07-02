@@ -589,7 +589,18 @@ def main() -> None:
     st.markdown(f"""
     <div class="zai-nav">
         <div class="zai-nav-left" style="display: flex; align-items: center; gap: 16px;">
-            <img src="https://lh3.googleusercontent.com/aida/AP1WRLsJXzNOPhsG9Bi_IwDHVQRl19DMmcGe0fdMDruCQcT583BGDM68L0UTyyi7inAaJeU8BB22vcJ-pgfJSMmXK2yVapFFgcdwdx10wX0uYmboWRK8KYb1MOyLRRLog9Vdh6xIDkzY1fotDxUYNUJjvV9LfP5vn3OdszAelLZ3YTsqwYhighxjHVnJolFclPki81BahQhqb0aGwHimb8EFXbSGPyvAFF0vMVBvaKchLzv_ZXgzoU2Ae2VSb28N" style="height: 40px; width: 40px; object-fit: contain;" />
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="height: 40px; width: 40px;">
+                <defs>
+                    <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#FF5252" />
+                        <stop offset="100%" stop-color="#E23744" />
+                    </linearGradient>
+                </defs>
+                <rect x="10" y="10" width="80" height="80" rx="20" fill="url(#logo-grad)" />
+                <path d="M38 35 v18 M34 35 v10 M42 35 v10 M38 53 v15" stroke="white" stroke-width="4" stroke-linecap="round"/>
+                <path d="M62 35 c-5 0-8 4-8 10 c0 6 3 10 8 10 s8-4 8-10 c0-6-3-10-8-10 z M62 55 v13" fill="white" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+                <path d="M72 20 l2 4 l4 2 l-4 2 l-2 4 l-2-4 l-4-2 l4-2 z" fill="#facc15" />
+            </svg>
             <span class="zai-nav-title">Zomato AI Recommendations</span>
         </div>
         <div class="zai-nav-right">
@@ -827,7 +838,18 @@ def main() -> None:
     st.markdown("""
     <div class="zai-footer">
         <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px; opacity: 0.6;">
-            <img src="https://lh3.googleusercontent.com/aida/AP1WRLsJXzNOPhsG9Bi_IwDHVQRl19DMmcGe0fdMDruCQcT583BGDM68L0UTyyi7inAaJeU8BB22vcJ-pgfJSMmXK2yVapFFgcdwdx10wX0uYmboWRK8KYb1MOyLRRLog9Vdh6xIDkzY1fotDxUYNUJjvV9LfP5vn3OdszAelLZ3YTsqwYhighxjHVnJolFclPki81BahQhqb0aGwHimb8EFXbSGPyvAFF0vMVBvaKchLzv_ZXgzoU2Ae2VSb28N" style="height: 24px; width: 24px; filter: grayscale(100%) contrast(1.2);" />
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="height: 24px; width: 24px; filter: grayscale(100%) contrast(1.2);">
+                <defs>
+                    <linearGradient id="footer-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#FF5252" />
+                        <stop offset="100%" stop-color="#E23744" />
+                    </linearGradient>
+                </defs>
+                <rect x="10" y="10" width="80" height="80" rx="20" fill="url(#footer-logo-grad)" />
+                <path d="M38 35 v18 M34 35 v10 M42 35 v10 M38 53 v15" stroke="white" stroke-width="4" stroke-linecap="round"/>
+                <path d="M62 35 c-5 0-8 4-8 10 c0 6 3 10 8 10 s8-4 8-10 c0-6-3-10-8-10 z M62 55 v13" fill="white" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+                <path d="M72 20 l2 4 l4 2 l-4 2 l-2 4 l-2-4 l-4-2 l4-2 z" fill="#facc15" />
+            </svg>
             <span style="font-size: 14px; font-weight: 500; color: #e4bebc;">Zomato AI Recommendations</span>
         </div>
         <p style="margin-bottom: 16px;">© 2026 Zomato AI Recommendations. Powered by advanced semantic search and culinary neural networks.</p>
